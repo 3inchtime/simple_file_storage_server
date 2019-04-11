@@ -96,14 +96,14 @@ func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func FileDownloadHandler(w http.ResponseWriter, r *http.Request){
+func FileDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	fileSha1 := r.Form.Get("filehash")
 
 	file := meta.GetFileMeta(fileSha1)
 
-	f ,err := os.Open(file.Location)
+	f, err := os.Open(file.Location)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -123,7 +123,7 @@ func FileDownloadHandler(w http.ResponseWriter, r *http.Request){
 	w.Write(data)
 }
 
-func FileUpdateHandler(w http.ResponseWriter, r *http.Request){
+func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	opType := r.Form.Get("op")
@@ -143,6 +143,7 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request){
 	curFileMeta := meta.GetFileMeta(fileSha1)
 
 	curFileMeta.FileName = newFileName
+	curFileMeta.Location = "/tmp/" + newFileName
 
 	meta.UpdateFileMeta(curFileMeta)
 
@@ -159,7 +160,7 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request){
 	w.Write(data)
 }
 
-func FileDeleteHandler(w http.ResponseWriter, r *http.Request){
+func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	fileSha1 := r.Form.Get("filehash")
