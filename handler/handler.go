@@ -9,12 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
-
 // 上传文件接口
-func UploadFileHandler(w http.ResponseWriter, r *http.Request){
+func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		index, err := ioutil.ReadFile("./static/view/index.html")
 		if err != nil {
@@ -23,9 +23,9 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request){
 		}
 		io.WriteString(w, string(index))
 
-	}else if r.Method == "POST" {
+	} else if r.Method == "POST" {
 		file, head, err := r.FormFile("file")
-		if err != nil{
+		if err != nil {
 			fmt.Printf("Upload File Error: %s\n", err.Error())
 			return
 		}
@@ -51,11 +51,11 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request){
 		fileSha1 := util.FileSha1(newFile)
 
 		fileMeta := meta.FileMeta{
-			FileSha1:fileSha1,
-			FileName:head.Filename,
-			Location:fileLocation,
-			FileSize:fileSize,
-			UploadTime:uploadTime,
+			FileSha1:   fileSha1,
+			FileName:   head.Filename,
+			Location:   fileLocation,
+			FileSize:   fileSize,
+			UploadTime: uploadTime,
 		}
 
 		meta.UpdateFileMeta(fileMeta)
@@ -64,19 +64,114 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request){
 	}
 }
 
-func UploadSucHandler(w http.ResponseWriter, r *http.Request){
+func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Upload File Success")
 }
 
-func GetFileMetaHnadler(w http.ResponseWriter, r *http.Request){
+func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	filehash:=r.Form["filehash"][0]
+	filehash := r.Form["filehash"][0]
 	fMeta := meta.GetFileMeta(filehash)
 	data, err := json.Marshal(fMeta)
 	if err != nil {
-		 w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Write(data)
+}
+
+func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	limit, _ := strconv.Atoi(r.Form.Get("limit"))
+	fileMetas := meta.GetLastFileMetas(limit)
+
+	data, err := json.Marshal(fileMetas)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
+}
+
+func FileDownloadHandler(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+
+	fileSha1 := r.Form.Get("filehash")
+
+	file := meta.GetFileMeta(fileSha1)
+
+	f ,err := os.Open(file.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/octect-stream")
+	w.Header().Set("Content-Descrption", "attachment;filename=\""+file.FileName+"\"")
+	w.Write(data)
+}
+
+func FileUpdateHandler(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+
+	opType := r.Form.Get("op")
+	fileSha1 := r.Form.Get("filehash")
+	newFileName := r.Form.Get("filename")
+
+	if opType != "0" {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	curFileMeta := meta.GetFileMeta(fileSha1)
+
+	curFileMeta.FileName = newFileName
+
+	meta.UpdateFileMeta(curFileMeta)
+
+	w.WriteHeader(http.StatusOK)
+
+	data, err := json.Marshal(curFileMeta)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func FileDeleteHandler(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+
+	fileSha1 := r.Form.Get("filehash")
+
+	fileMeta := meta.GetFileMeta(fileSha1)
+
+	err := os.Remove(fileMeta.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	meta.RemoveFileMeta(fileSha1)
+	w.WriteHeader(http.StatusOK)
 }
