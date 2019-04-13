@@ -2,13 +2,13 @@ package handler
 
 import (
 	"encoding/json"
-	"filestore_server/meta"
-	"filestore_server/util"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"simple_file_storage_server/meta"
+	"simple_file_storage_server/util"
 	"strconv"
 	"time"
 )

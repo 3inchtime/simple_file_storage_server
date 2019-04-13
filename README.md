@@ -1,4 +1,4 @@
-# filestore_server
+# simple_file_storage_server
 
 Golang学习项目
 
