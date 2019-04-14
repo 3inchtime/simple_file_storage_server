@@ -58,7 +58,9 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 			UploadTime: uploadTime,
 		}
 
-		meta.UpdateFileMeta(fileMeta)
+		//保存文件信息至数据库
+		_ = meta.FileMetaUploadDB(fileMeta)
+		//meta.UpdateFileMeta(fileMeta)
 
 		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
 	}
@@ -72,7 +74,14 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	filehash := r.Form["filehash"][0]
-	fMeta := meta.GetFileMeta(filehash)
+	//fMeta := meta.GetFileMeta(filehash)
+
+	fMeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	data, err := json.Marshal(fMeta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
