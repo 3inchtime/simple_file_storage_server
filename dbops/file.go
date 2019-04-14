@@ -3,11 +3,12 @@ package dbops
 import (
 	"database/sql"
 	"fmt"
+	"simple_file_storage_server/dbops/mysql"
 )
 
 func UploadFileMetaDB(filehash string, filename string, filesize int64, fileaddr string) bool {
 
-	db := DBCon()
+	db := mysql.DBCon()
 	stmt, err := db.Prepare(
 		"insert ignore into tbl_file (`file_sha1`,`file_name`,`file_size`," +
 			"`file_addr`,`status`) values (?,?,?,?,1)")
@@ -42,7 +43,7 @@ type FileResult struct {
 }
 
 func GetFileMetaDB(filehash string) (*FileResult, error) {
-	db := DBCon()
+	db := mysql.DBCon()
 	stmt, err := db.Prepare("SELECT file_sha1, file_name, file_addr, file_size FROM tbl_file WHERE file_sha1=? AND status = 1")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err:" + err.Error())
