@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	db "simple_file_storage_server/dbops"
 	"simple_file_storage_server/util"
@@ -14,12 +13,7 @@ const pwdSalt = "FK996"
 //用户注册
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		data, err := ioutil.ReadFile("./static/view/signup.html")
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Write(data)
+		http.Redirect(w, r, "/static/view/signup.html", http.StatusFound)
 		return
 	}
 	r.ParseForm()
@@ -49,12 +43,8 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		data, err := ioutil.ReadFile("./static/view/signin.html")
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Write(data)
+		http.Redirect(w, r, "/static/view/signin.html", http.StatusFound)
+		return
 	}
 
 	r.ParseForm()

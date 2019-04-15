@@ -17,6 +17,11 @@ func main() {
 
 	http.HandleFunc("/user/signup", handler.SignUpHandler)
 	http.HandleFunc("/user/signin", handler.SignInHandler)
+
+	// 配置静态资源处理
+	http.Handle("/static/",
+		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Printf("Failed to start server: %s\n", err.Error())
