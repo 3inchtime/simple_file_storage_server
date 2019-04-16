@@ -84,9 +84,39 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp.JSONBytes())
 }
 
+func UserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	token := r.Form.Get("token")
+	isTokenValid := IsTokenValid(token)
+	if !isTokenValid {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	user, err := db.GetUserInfo(username)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	resp := util.RespMsg{
+		Code: 0,
+		Msg:  "OK",
+		Data: user,
+	}
+	w.Write(resp.JSONBytes())
+}
+
 func GenToken(username string) string {
 	ts := fmt.Sprintf("%x", time.Now().Unix())
 	token := util.MD5([]byte(username + ts + pwdSalt))
 	token = token + ts[:8]
 	return token
+}
+
+func IsTokenValid(token string) bool {
+	if len(token) != 40 {
+		return false
+	}
+
+	return true
 }

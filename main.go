@@ -17,6 +17,7 @@ func main() {
 
 	http.HandleFunc("/user/signup", handler.SignUpHandler)
 	http.HandleFunc("/user/signin", handler.SignInHandler)
+	http.HandleFunc("/user/info", handler.UserInfoHandler)
 
 	// 配置静态资源处理
 	http.Handle("/static/",
