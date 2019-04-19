@@ -7,9 +7,10 @@ import (
 
 func UserSignUp(username string, pwd string) bool {
 	db := mysql.DBCon()
-	stmt, err := db.Prepare("insert ignore into tbl_user (`user_name`, `user_pwd`) values (?, ?)")
+	stmt, err := db.Prepare(
+		"insert into tbl_user (`user_name`,`user_pwd`) values (?,?)")
 	if err != nil {
-		fmt.Println("Failed to prepare statement, err:" + err.Error())
+		fmt.Println("Failed to Prepare, err:" + err.Error())
 		return false
 	}
 	defer stmt.Close()
@@ -19,11 +20,8 @@ func UserSignUp(username string, pwd string) bool {
 		fmt.Println("Failed to insert, err:" + err.Error())
 		return false
 	}
-
-	if rf, err := ret.RowsAffected(); nil == err {
-		if rf <= 0 {
-			fmt.Printf("User with username: %s has been signed up", username)
-		}
+	if rowsAffected, err := ret.RowsAffected(); nil == err && rowsAffected > 0 {
+		fmt.Println("Failed to Signup, err:" + err.Error())
 		return true
 	}
 	return false
