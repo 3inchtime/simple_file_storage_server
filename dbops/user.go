@@ -20,8 +20,14 @@ func UserSignUp(username string, pwd string) bool {
 		fmt.Println("Failed to insert, err:" + err.Error())
 		return false
 	}
-	if rowsAffected, err := ret.RowsAffected(); nil == err && rowsAffected > 0 {
-		fmt.Println("Failed to Signup, err:" + err.Error())
+
+	rowsAffected, err := ret.RowsAffected()
+	if err != nil {
+		fmt.Println("Failed to insert, err:" + err.Error())
+		return false
+	}
+	if rowsAffected > 0 {
+		fmt.Println("Signup succeed")
 		return true
 	}
 	return false
