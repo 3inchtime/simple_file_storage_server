@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	db "simple_file_storage_server/dbops"
 	"simple_file_storage_server/meta"
 	"simple_file_storage_server/util"
 	"strconv"
@@ -61,8 +62,15 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		//保存文件信息至数据库
 		_ = meta.FileMetaUploadDB(fileMeta)
 		//meta.UpdateFileMeta(fileMeta)
-
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		r.ParseForm()
+		username := r.Form.Get("username")
+		suc := db.UserFileUpload(username, fileMeta.FileSha1,
+			fileMeta.FileName, fileMeta.FileSize)
+		if suc {
+			http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
+		} else {
+			w.Write([]byte("Upload Failed."))
+		}
 	}
 }
 
@@ -93,10 +101,14 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
+	username := r.Form.Get("username")
 	limit, _ := strconv.Atoi(r.Form.Get("limit"))
-	fileMetas := meta.GetLastFileMetas(limit)
-
-	data, err := json.Marshal(fileMetas)
+	userFile, err := db.QueryUserFileMetas(username, limit)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	data, err := json.Marshal(userFile)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -184,4 +196,48 @@ func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	meta.RemoveFileMeta(fileSha1)
 	w.WriteHeader(http.StatusOK)
+}
+
+
+func FastUploadHandler(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+
+	username := r.Form.Get("username")
+	filehash := r.Form.Get("filehash")
+	filename := r.Form.Get("filename")
+	filesize, _ := strconv.Atoi(r.Form.Get("filesize"))
+
+	fileMeta, err := meta.GetFileMetaDB(filehash)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if fileMeta.FileSha1 == "" {
+		resp := util.RespMsg{
+			Code:-1,
+			Msg:"Fast Upload Failed",
+		}
+		w.Write(resp.JSONBytes())
+		return
+	}
+
+	suc := db.UserFileUpload(username, filehash, filename, int64(filesize))
+	if suc {
+		resp := util.RespMsg{
+			Code:0,
+			Msg:"Fast Upload Succeed",
+		}
+		w.Write(resp.JSONBytes())
+		return
+	} else {
+		resp := util.RespMsg{
+			Code:-2,
+			Msg:"Fast Upload Failed, Please try again",
+		}
+		w.Write(resp.JSONBytes())
+		return
+	}
 }

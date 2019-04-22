@@ -14,10 +14,11 @@ func main() {
 	http.HandleFunc("/file/update", handler.FileUpdateHandler)
 	http.HandleFunc("/file/download", handler.FileDownloadHandler)
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
+	http.HandleFunc("/file/fastupload", handler.FastUploadHandler)
 
 	http.HandleFunc("/user/signup", handler.SignUpHandler)
 	http.HandleFunc("/user/signin", handler.SignInHandler)
-	http.HandleFunc("/user/info", handler.UserInfoHandler)
+	http.HandleFunc("/user/info", handler.HttpInterceptor(handler.UserInfoHandler))
 
 	// 配置静态资源处理
 	http.Handle("/static/",
