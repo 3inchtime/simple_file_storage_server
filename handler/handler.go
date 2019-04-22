@@ -9,6 +9,8 @@ import (
 	"os"
 	"simple_file_storage_server/meta"
 	"simple_file_storage_server/util"
+	db "simple_file_storage_server/dbops"
+
 	"strconv"
 	"time"
 )
@@ -61,8 +63,15 @@ func UploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		//保存文件信息至数据库
 		_ = meta.FileMetaUploadDB(fileMeta)
 		//meta.UpdateFileMeta(fileMeta)
+		r.ParseForm()
+		username := r.Form.Get("username")
 
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		suc := db.UserFileUpload(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
+		if suc {
+			http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
+		} else {
+			w.Write([]byte("Upload Failed"))
+		}
 	}
 }
 
