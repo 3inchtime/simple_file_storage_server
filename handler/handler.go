@@ -198,8 +198,7 @@ func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-
-func FastUploadHandler(w http.ResponseWriter, r *http.Request){
+func FastUploadHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	username := r.Form.Get("username")
@@ -217,8 +216,8 @@ func FastUploadHandler(w http.ResponseWriter, r *http.Request){
 
 	if fileMeta.FileSha1 == "" {
 		resp := util.RespMsg{
-			Code:-1,
-			Msg:"Fast Upload Failed",
+			Code: -1,
+			Msg:  "Fast Upload Failed",
 		}
 		w.Write(resp.JSONBytes())
 		return
@@ -227,15 +226,15 @@ func FastUploadHandler(w http.ResponseWriter, r *http.Request){
 	suc := db.UserFileUpload(username, filehash, filename, int64(filesize))
 	if suc {
 		resp := util.RespMsg{
-			Code:0,
-			Msg:"Fast Upload Succeed",
+			Code: 0,
+			Msg:  "Fast Upload Succeed",
 		}
 		w.Write(resp.JSONBytes())
 		return
 	} else {
 		resp := util.RespMsg{
-			Code:-2,
-			Msg:"Fast Upload Failed, Please try again",
+			Code: -2,
+			Msg:  "Fast Upload Failed, Please try again",
 		}
 		w.Write(resp.JSONBytes())
 		return
