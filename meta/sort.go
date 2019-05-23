@@ -2,20 +2,20 @@ package meta
 
 import "time"
 
-const baseTime = "2006-01-02 15:04:05"
+const baseFormat = "2006-01-02 15:04:05"
 
 type ByUploadTime []FileMeta
 
-func (b ByUploadTime) Len() int {
-	return len(b)
+func (a ByUploadTime) Len() int {
+	return len(a)
 }
 
-func (b ByUploadTime) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
+func (a ByUploadTime) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
 }
 
-func (b ByUploadTime) Less(i, j int) bool {
-	iTime, _ := time.Parse(baseTime, b[i].UploadTime)
-	jTIme, _ := time.Parse(baseTime, b[j].UploadTime)
-	return iTime.UnixNano() > jTIme.UnixNano()
+func (a ByUploadTime) Less(i, j int) bool {
+	iTime, _ := time.Parse(baseFormat, a[i].UploadAt)
+	jTime, _ := time.Parse(baseFormat, a[j].UploadAt)
+	return iTime.UnixNano() > jTime.UnixNano()
 }

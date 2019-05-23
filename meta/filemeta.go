@@ -1,17 +1,18 @@
 package meta
 
 import (
-	"fmt"
-	"simple_file_storage_server/dbops"
 	"sort"
+
+	mydb "simple_file_storage_server/db"
 )
 
+// FileMeta : 文件元信息结构
 type FileMeta struct {
-	FileSha1   string
-	FileName   string
-	FileSize   int64
-	Location   string
-	UploadTime string
+	FileSha1 string
+	FileName string
+	FileSize int64
+	Location string
+	UploadAt string
 }
 
 var fileMetas map[string]FileMeta
@@ -20,52 +21,73 @@ func init() {
 	fileMetas = make(map[string]FileMeta)
 }
 
+// UpdateFileMeta : 新增/更新文件元信息
 func UpdateFileMeta(fmeta FileMeta) {
 	fileMetas[fmeta.FileSha1] = fmeta
 }
 
-//保存文件信息至数据库
-func FileMetaUploadDB(fmeta FileMeta) bool {
-	filehash := fmeta.FileSha1
-	filename := fmeta.FileName
-	filesize := fmeta.FileSize
-	fileaddr := fmeta.Location
-	return dbops.UploadFileMetaDB(filehash, filename, filesize, fileaddr)
-}
-
+// GetFileMeta : 通过sha1值获取文件的元信息对象
 func GetFileMeta(fileSha1 string) FileMeta {
 	return fileMetas[fileSha1]
 }
 
-//从数据库获取文件信息
+// GetLastFileMetas : 获取批量的文件元信息列表
+func GetLastFileMetas(count int) []FileMeta {
+	fMetaArray := make([]FileMeta, len(fileMetas))
+	for _, v := range fileMetas {
+		fMetaArray = append(fMetaArray, v)
+	}
+
+	sort.Sort(ByUploadTime(fMetaArray))
+	return fMetaArray[0:count]
+}
+
+// RemoveFileMeta : 删除元信息
+func RemoveFileMeta(fileSha1 string) {
+	delete(fileMetas, fileSha1)
+}
+
+// GetFileMetaDB : 从mysql获取文件元信息
 func GetFileMetaDB(fileSha1 string) (FileMeta, error) {
-	fresult, err := dbops.GetFileMetaDB(fileSha1)
+	tfile, err := mydb.GetFileMeta(fileSha1)
 	if err != nil {
-		fmt.Printf("Query file err: %s\n", err.Error())
 		return FileMeta{}, err
 	}
 	fmeta := FileMeta{
-		FileSha1: fresult.FileHash,
-		FileName: fresult.FileName.String,
-		FileSize: fresult.FileSize.Int64,
-		Location: fresult.FileAddr.String,
+		FileSha1: tfile.FileHash,
+		FileName: tfile.FileName.String,
+		FileSize: tfile.FileSize.Int64,
+		Location: tfile.FileAddr.String,
 	}
 	return fmeta, nil
-
 }
 
-func GetLastFileMetas(limit int) []FileMeta {
-	fileMetaArray := make([]FileMeta, limit)
-
-	for _, file := range fileMetas {
-		fileMetaArray = append(fileMetaArray, file)
+// GetLastFileMetasDB : 批量从mysql获取文件元信息
+func GetLastFileMetasDB(limit int) ([]FileMeta, error) {
+	tfiles, err := mydb.GetFileMetaList(limit)
+	if err != nil {
+		return make([]FileMeta, 0), err
 	}
-	// 文件按创建时间排序
-	sort.Sort(ByUploadTime(fileMetaArray))
 
-	return fileMetaArray[:limit]
+	tfilesm := make([]FileMeta, len(tfiles))
+	for i := 0; i < len(tfilesm); i++ {
+		tfilesm[i] = FileMeta{
+			FileSha1: tfiles[i].FileHash,
+			FileName: tfiles[i].FileName.String,
+			FileSize: tfiles[i].FileSize.Int64,
+			Location: tfiles[i].FileAddr.String,
+		}
+	}
+	return tfilesm, nil
 }
 
-func RemoveFileMeta(fileSha1 string) {
-	delete(fileMetas, fileSha1)
+// UpdateFileMetaDB : 新增/更新文件元信息到mysql中
+func UpdateFileMetaDB(fmeta FileMeta) bool {
+	return mydb.OnFileUploadFinished(
+		fmeta.FileSha1, fmeta.FileName, fmeta.FileSize, fmeta.Location)
+}
+
+// OnFileRemovedDB : 删除文件
+func OnFileRemovedDB(filehash string) bool {
+	return mydb.OnFileRemoved(filehash)
 }

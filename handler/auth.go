@@ -1,30 +1,30 @@
 package handler
 
-import "net/http"
+import (
+	"net/http"
+	"simple_file_storage_server/common"
+	"simple_file_storage_server/util"
+)
 
-//验证用户登录
-func HttpInterceptor(h http.HandlerFunc) http.HandlerFunc {
+// HTTPInterceptor : http请求拦截器
+func HTTPInterceptor(h http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			r.ParseForm()
 			username := r.Form.Get("username")
 			token := r.Form.Get("token")
 
-			if len(username) < 3 {
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
-			if !IsTokenValid(token) {
-				w.WriteHeader(http.StatusForbidden)
+			//验证登录token是否有效
+			if len(username) < 3 || !IsTokenValid(token) {
+				// token校验失败则跳转到直接返回失败提示
+				resp := util.NewRespMsg(
+					int(common.StatusInvalidToken),
+					"token无效",
+					nil,
+				)
+				w.Write(resp.JSONBytes())
 				return
 			}
 			h(w, r)
 		})
-}
-
-func IsTokenValid(token string) bool {
-	if len(token) != 40 {
-		return false
-	}
-	return true
 }
